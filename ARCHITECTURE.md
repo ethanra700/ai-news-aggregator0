@@ -32,7 +32,7 @@ flowchart LR
 
 ## File structure
 
-Status: ✅ implemented · 🔲 placeholder (not written yet)
+Status: ✅ implemented · 🟡 partly done · 🔲 placeholder (not written yet)
 
 ```
 ai-news-aggregator0/
@@ -61,7 +61,8 @@ ai-news-aggregator0/
     ├── agent/
     │   └── prompts.py            🔲 user profile + system prompts
     ├── digest.py                 🔲 builds the daily digest
-    └── scheduler.py              🔲 runs the whole pipeline in order
+    ├── config.py                 ✅ YouTube channels to monitor
+    └── runner.py                 🟡 runs all scrapers (later: the whole pipeline)
 ```
 
 ### What goes in each file
@@ -128,7 +129,9 @@ Both scrapers should return the same shape of data (title, url, published_at, co
 
 **`digest.py`**: selects articles published in the last 24 hours, calls `llm.build_digest`, renders the result to HTML and plain text, and saves a `digests` row.
 
-**`scheduler.py`**: runs the full pipeline in order: scrape → store → summarize → digest → email. If one source fails, the rest of the run continues.
+**`config.py`**: `YOUTUBE_CHANNELS`, the list of channel IDs to monitor. OpenAI and Anthropic need no config (their feed URLs live in their scrapers).
+
+**`runner.py`**: `run_scrapers(hours=24)` runs every scraper and returns a `ScrapeResults` model (`youtube`, `openai`, `anthropic` lists). It will grow into the full pipeline: scrape → store → summarize → digest → email.
 
 #### Infrastructure
 
@@ -189,7 +192,7 @@ Each step is built and tested before moving to the next. Tick a box when it's do
   OpenAI via RSS, Anthropic via the HTML listing page; full article text with trafilatura. Returns the same shape as the YouTube scraper.
   *Test:* `uv run python -m app.scrapers.blog` prints recent posts from both blogs with article text.
 
-- [ ] **4. Save scraped items** (`app/scheduler.py` ingest step)
+- [ ] **4. Save scraped items** (`app/runner.py` ingest step)
   Insert sources and articles into the database, skipping URLs that already exist.
   *Test:* run ingest twice; the `articles` table has rows from both scrapers and no duplicates.
 
@@ -205,7 +208,7 @@ Each step is built and tested before moving to the next. Tick a box when it's do
   Send the digest through Resend and set `digests.sent_at`.
   *Test:* the email arrives in your inbox, and `sent_at` is set.
 
-- [ ] **8. CLI + full pipeline** (`main.py`, `app/scheduler.py`)
+- [ ] **8. CLI + full pipeline** (`main.py`, `app/runner.py`)
   The `init-db`, `ingest`, `summarize`, `digest` and `run` commands; `run` does everything in order, and one failing source doesn't stop the rest.
   *Test:* `uv run python main.py run` from a fresh database ends with the email in your inbox; running it again adds no duplicates.
 
