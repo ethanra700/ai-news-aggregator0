@@ -16,6 +16,7 @@ dependencies = [
     "psycopg2-binary>=2.9.13",
     "requests>=2.34.2",
     "python-dotenv>=1.2.4",
+    "pydantic>=2.13.5",
 ]
 
 [dependency-groups]
