@@ -1,0 +1,10 @@
+{
+    // Use the project's uv environment (.venv) for running code and the Interactive Window
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+
+    // Shift+Enter sends the current line / selection to the Interactive Window
+    "jupyter.interactiveWindow.textEditor.executeSelection": true,
+
+    // Run from the project root, so imports like `from app.scrapers.youtube import ...` work
+    "jupyter.notebookFileRoot": "${workspaceFolder}"
+}
