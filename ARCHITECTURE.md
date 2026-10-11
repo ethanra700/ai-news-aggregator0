@@ -44,17 +44,21 @@ ai-news-aggregator0/
 ├── readme.md                     🔲 quick-start for humans
 ├── ARCHITECTURE.md               ✅ this file
 ├── docker/
-│   ├── docker-compose.yml        🔲 local Postgres database
+│   ├── docker-compose.yml        ✅ local Postgres database
 │   └── Dockerfile                🔲 container for the app (optional)
 ├── .github/workflows/
 │   └── daily-digest.yml          🔲 scheduled daily run
 └── app/
     ├── __init__.py
-    ├── models.py                 🔲 database tables (SQLAlchemy)
-    ├── database.py               🔲 database connection + sessions
+    ├── database/
+    │   ├── connection.py         ✅ engine + session factory from DATABASE_URL
+    │   ├── models.py             ✅ SQLAlchemy tables (articles)
+    │   ├── create_tables.py      ✅ script that creates all tables
+    │   └── repository.py         ✅ save / read articles
     ├── scrapers/
     │   ├── youtube.py            ✅ latest videos + transcripts per channel
-    │   └── blog.py               🔲 latest blog posts + article text
+    │   ├── openai_news.py        ✅ OpenAI news RSS feed
+    │   └── anthropic_news.py     ✅ Anthropic news/research/engineering feeds
     ├── services/
     │   ├── llm.py                🔲 OpenAI calls (summaries + digest)
     │   └── email.py              🔲 sends the digest email
@@ -79,17 +83,22 @@ ai-news-aggregator0/
 | `digest` | Builds today's digest (`--dry-run` writes HTML to a file instead of emailing) |
 | `run` | All of the above, then sends the email; this is what the daily job calls |
 
-#### `app/`: database
+#### `app/database/`: database
 
 **`models.py`**: the SQLAlchemy table definitions:
 
 | Table | Columns | Purpose |
 |---|---|---|
-| `sources` | `id`, `name`, `type` (`youtube` / `blog`), `url`, `feed_url`, `channel_id`, `is_active`, `created_at` | What to scrape |
-| `articles` | `id`, `source_id` → sources, `title`, `url` (unique), `published_at`, `content`, `summary`, `created_at` | One row per video or blog post. `content` holds the transcript or article text |
-| `digests` | `id`, `period_start`, `period_end`, `items` (JSON), `content_html`, `created_at`, `sent_at` | One row per daily email |
+| `articles` ✅ | `id`, `source` (`youtube` / `openai` / `anthropic`), `guid`, `title`, `url` (unique), `description`, `content`, `summary`, `published_at`, `created_at` | One row per video or blog post. `content` holds the transcript (or full article text later). `summary` is filled in by the LLM |
+| `digests` 🔲 | `id`, `period_start`, `period_end`, `items` (JSON), `content_html`, `created_at`, `sent_at` | One row per daily email |
 
-**`database.py`**: creates the SQLAlchemy engine from `DATABASE_URL` and provides a session factory. The same code works for local Docker Postgres and Neon; only the URL changes. It also has the function that creates the tables (`Base.metadata.create_all`).
+Sources are configured in `app/config.py`, not in a table, to keep things simple.
+
+**`connection.py`**: creates the SQLAlchemy engine from `DATABASE_URL` and a session factory (`SessionLocal`). The same code works for local Docker Postgres and Neon; only the URL changes.
+
+**`create_tables.py`**: `uv run python -m app.database.create_tables` creates every table defined in `models.py`. It is safe to re-run, but it never changes tables that already exist, so adding a column later means recreating the table (or adding Alembic migrations).
+
+**`repository.py`**: `ArticleRepository` is the interface the rest of the app uses. `save_articles(rows)` inserts rows and skips URLs already saved; `get_recent_articles(hours)` returns the latest articles.
 
 #### `app/scrapers/`: collecting content
 
@@ -147,7 +156,7 @@ All settings come from environment variables: a local `.env` file (never committ
 
 | Variable | Example | Used by |
 |---|---|---|
-| `DATABASE_URL` | `postgresql+psycopg://postgres:postgres@localhost:5432/news` | database |
+| `DATABASE_URL` | `postgresql+psycopg://ai_news:ai_news_password@localhost:5433/ai_news` | database |
 | `OPENAI_API_KEY` | `sk-...` | LLM |
 | `OPENAI_MODEL` | `gpt-5-mini` | LLM (optional) |
 | `RESEND_API_KEY` | `re_...` | email |
@@ -184,7 +193,7 @@ Each step is built and tested before moving to the next. Tick a box when it's do
   Latest videos per channel ID, filtered by time, with transcripts.
   *Test:* `uv run python -m app.scrapers.youtube` prints the last 24h of videos with transcript text.
 
-- [ ] **2. Database + local Postgres** (`docker/docker-compose.yml`, `app/models.py`, `app/database.py`, `.env`)
+- [ ] **2. Database + local Postgres** (`docker/docker-compose.yml`, `app/database/`, `.env`)
   Postgres container; `sources`, `articles`, `digests` tables; engine/session from `DATABASE_URL`; a function that creates the tables.
   *Test:* `docker compose -f docker/docker-compose.yml up -d`, run the create-tables function, then `\dt` in `psql` shows all three tables.
 

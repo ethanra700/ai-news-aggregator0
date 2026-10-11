@@ -1,1 +1,23 @@
-# PostgreSQL (+ app) setup
+# Local PostgreSQL database for development.
+#   Start:  docker compose -f docker/docker-compose.yml up -d
+#   Stop:   docker compose -f docker/docker-compose.yml down
+# Data is kept in the "postgres_data" volume, so it survives restarts.
+#
+# Settings come from docker/.env (copy docker/.env.example). Without that file, the defaults after ":-" are used.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: ai-news-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ai_news}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ai_news_password}
+      POSTGRES_DB: ${POSTGRES_DB:-ai_news}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"  # your machine's port -> Postgres inside the container (5432 is used by other databases)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
