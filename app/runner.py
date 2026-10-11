@@ -34,44 +34,14 @@ def run_scrapers(hours: int = 24) -> ScrapeResults:
     )
 
 
-def to_database_rows(results: ScrapeResults) -> list[dict]:
-    """Convert the scraper models into rows for the `articles` table (every row needs the same keys)."""
-    rows = []
-    for video in results.youtube:
-        rows.append(
-            {
-                "source": "youtube",
-                "guid": video.video_id,
-                "title": video.title,
-                "url": video.url,
-                "description": None,
-                "content": video.transcript.text if video.transcript else None,
-                "published_at": video.published_at,
-            }
-        )
-    for source, articles in [("openai", results.openai), ("anthropic", results.anthropic)]:
-        for article in articles:
-            rows.append(
-                {
-                    "source": source,
-                    "guid": article.guid,
-                    "title": article.title,
-                    "url": article.url,
-                    "description": article.description,
-                    "content": None,  # full article text can be added later
-                    "published_at": article.published_at,
-                }
-            )
-    return rows
-
-
-def run(hours: int = 24) -> int:
-    """Scrape all sources and save new items to the database. Returns how many were new."""
+def run(hours: int = 24) -> None:
+    """Scrape all sources and save new items to their tables (items already saved are skipped)."""
     results = run_scrapers(hours)
-    rows = to_database_rows(results)
-    new_count = ArticleRepository().save_articles(rows)
-    print(f"Scraped {len(rows)} item(s), {new_count} new saved to the database")
-    return new_count
+    repo = ArticleRepository()
+    new_youtube = repo.save_youtube_videos(results.youtube)
+    new_openai = repo.save_openai_articles(results.openai)
+    new_anthropic = repo.save_anthropic_articles(results.anthropic)
+    print(f"YouTube: {new_youtube} new, OpenAI: {new_openai} new, Anthropic: {new_anthropic} new")
 
 
 if __name__ == "__main__":

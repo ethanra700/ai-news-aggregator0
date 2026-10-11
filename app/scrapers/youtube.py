@@ -20,9 +20,11 @@ class Transcript(BaseModel):
 
 class ChannelVideo(BaseModel):
     video_id: str
+    channel_id: str
     title: str
     url: str
     published_at: datetime
+    description: str = ""
     transcript: Transcript | None = None
 
 
@@ -43,9 +45,11 @@ class YouTubeScraper:
                 videos.append(
                     ChannelVideo(
                         video_id=entry.yt_videoid,
+                        channel_id=channel_id,
                         title=entry.title,
                         url=entry.link,
                         published_at=published_at,
+                        description=entry.get("summary", ""),
                     )
                 )
         return videos

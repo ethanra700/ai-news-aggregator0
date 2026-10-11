@@ -1,4 +1,4 @@
-"""SQLAlchemy database models (one class = one table)."""
+"""SQLAlchemy database models (one class = one table). One table per source."""
 
 from datetime import datetime
 
@@ -10,18 +10,39 @@ class Base(DeclarativeBase):
     pass
 
 
-class Article(Base):
-    """One piece of content from any source: a YouTube video or a blog post."""
+class YouTubeVideo(Base):
+    __tablename__ = "youtube_videos"
 
-    __tablename__ = "articles"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    source: Mapped[str] = mapped_column(String(50), index=True)  # "youtube", "openai" or "anthropic"
-    guid: Mapped[str] = mapped_column(String(500))  # the source's own ID (video ID or feed guid)
-    title: Mapped[str] = mapped_column(Text)
-    url: Mapped[str] = mapped_column(String(1000), unique=True)  # unique, so the same item is never saved twice
+    video_id: Mapped[str] = mapped_column(String, primary_key=True)
+    title: Mapped[str] = mapped_column(String)
+    url: Mapped[str] = mapped_column(String)
+    channel_id: Mapped[str] = mapped_column(String)
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     description: Mapped[str | None] = mapped_column(Text)
-    content: Mapped[str | None] = mapped_column(Text)  # transcript or full article text
-    summary: Mapped[str | None] = mapped_column(Text)  # filled in later by the LLM
-    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    transcript: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class OpenAIArticle(Base):
+    __tablename__ = "openai_articles"
+
+    guid: Mapped[str] = mapped_column(String, primary_key=True)
+    title: Mapped[str] = mapped_column(String)
+    url: Mapped[str] = mapped_column(String)
+    description: Mapped[str | None] = mapped_column(Text)
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    category: Mapped[str | None] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AnthropicArticle(Base):
+    __tablename__ = "anthropic_articles"
+
+    guid: Mapped[str] = mapped_column(String, primary_key=True)
+    title: Mapped[str] = mapped_column(String)
+    url: Mapped[str] = mapped_column(String)
+    description: Mapped[str | None] = mapped_column(Text)
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    category: Mapped[str | None] = mapped_column(String)
+    markdown: Mapped[str | None] = mapped_column(Text)  # full article text, filled in later
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

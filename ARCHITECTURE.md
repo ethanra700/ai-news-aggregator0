@@ -52,9 +52,9 @@ ai-news-aggregator0/
     ├── __init__.py
     ├── database/
     │   ├── connection.py         ✅ engine + session factory from DATABASE_URL
-    │   ├── models.py             ✅ SQLAlchemy tables (articles)
+    │   ├── models.py             ✅ SQLAlchemy tables (one per source)
     │   ├── create_tables.py      ✅ script that creates all tables
-    │   └── repository.py         ✅ save / read articles
+    │   └── repository.py         ✅ CRUD for the source tables
     ├── scrapers/
     │   ├── youtube.py            ✅ latest videos + transcripts per channel
     │   ├── openai_news.py        ✅ OpenAI news RSS feed
@@ -89,8 +89,12 @@ ai-news-aggregator0/
 
 | Table | Columns | Purpose |
 |---|---|---|
-| `articles` ✅ | `id`, `source` (`youtube` / `openai` / `anthropic`), `guid`, `title`, `url` (unique), `description`, `content`, `summary`, `published_at`, `created_at` | One row per video or blog post. `content` holds the transcript (or full article text later). `summary` is filled in by the LLM |
-| `digests` 🔲 | `id`, `period_start`, `period_end`, `items` (JSON), `content_html`, `created_at`, `sent_at` | One row per daily email |
+| `youtube_videos` ✅ | `video_id` (PK), `title`, `url`, `channel_id`, `published_at`, `description`, `transcript`, `created_at` | One row per video |
+| `openai_articles` ✅ | `guid` (PK), `title`, `url`, `description`, `published_at`, `category`, `created_at` | One row per OpenAI post |
+| `anthropic_articles` ✅ | `guid` (PK), `title`, `url`, `description`, `published_at`, `category`, `markdown`, `created_at` | One row per Anthropic post. `markdown` holds the full text (filled in later) |
+| `digests` 🔲 | `id`, `article_type`, `article_id`, `url`, `title`, `summary`, `created_at` | One row per summarized item (added in a later step) |
+
+One table per source, matching the tutorial. Each primary key (`video_id` / `guid`) makes re-saving the same item a no-op.
 
 Sources are configured in `app/config.py`, not in a table, to keep things simple.
 
@@ -98,7 +102,7 @@ Sources are configured in `app/config.py`, not in a table, to keep things simple
 
 **`create_tables.py`**: `uv run python -m app.database.create_tables` creates every table defined in `models.py`. It is safe to re-run, but it never changes tables that already exist, so adding a column later means recreating the table (or adding Alembic migrations).
 
-**`repository.py`**: `ArticleRepository` is the interface the rest of the app uses. `save_articles(rows)` inserts rows and skips URLs already saved; `get_recent_articles(hours)` returns the latest articles.
+**`repository.py`**: `ArticleRepository` is the interface the rest of the app uses. Create: `save_youtube_videos`, `save_openai_articles`, `save_anthropic_articles` (take the scraper models directly and skip items already saved). Read: `get_recent(table, hours)`, `get_youtube_videos_without_transcript()`. Update: `update_youtube_transcript`, `update_anthropic_markdown`. Delete: `delete(table, id)`.
 
 #### `app/scrapers/`: collecting content
 
