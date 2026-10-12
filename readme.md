@@ -2,8 +2,8 @@
 
 An automated pipeline that scrapes AI news from YouTube and AI lab blogs, uses LLM agents to summarize and rank it against my interests, and emails me a personalized daily briefing.
 
-![Architecture](<img width="1298" height="455" alt="diagram" src="https://github.com/user-attachments/assets/548712d5-1dbc-4fab-9fc0-cb55c6dfc554" />
-)
+<img width="1298" height="455" alt="diagram" src="https://github.com/user-attachments/assets/547223e4-d692-4672-ab62-3163ab505321" />
+
 
 ## How It Works
 
