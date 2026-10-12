@@ -34,14 +34,15 @@ def run_scrapers(hours: int = 24) -> ScrapeResults:
     )
 
 
-def run(hours: int = 24) -> None:
+def run(hours: int = 24) -> ScrapeResults:
     """Scrape all sources and save new items to their tables (items already saved are skipped)."""
     results = run_scrapers(hours)
     repo = ArticleRepository()
     new_youtube = repo.save_youtube_videos(results.youtube)
     new_openai = repo.save_openai_articles(results.openai)
     new_anthropic = repo.save_anthropic_articles(results.anthropic)
-    print(f"YouTube: {new_youtube} new, OpenAI: {new_openai} new, Anthropic: {new_anthropic} new")
+    print(f"Saved to database - YouTube: {new_youtube} new, OpenAI: {new_openai} new, Anthropic: {new_anthropic} new")
+    return results
 
 
 if __name__ == "__main__":

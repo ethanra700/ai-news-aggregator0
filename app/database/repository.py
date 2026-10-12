@@ -72,6 +72,12 @@ class ArticleRepository:
         with SessionLocal() as session:
             return list(session.scalars(statement))
 
+    def get_anthropic_articles_without_markdown(self) -> list[AnthropicArticle]:
+        """Articles whose full text hasn't been downloaded yet."""
+        statement = select(AnthropicArticle).where(AnthropicArticle.markdown.is_(None))
+        with SessionLocal() as session:
+            return list(session.scalars(statement))
+
     # --- Update ---
 
     def update_youtube_transcript(self, video_id: str, transcript: str) -> None:
