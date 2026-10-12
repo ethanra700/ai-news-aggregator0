@@ -14,4 +14,8 @@ YOUTUBE_CHANNELS = [
     "UCn8ujwUInbJkBhffxqAPBVQ",  # Dave Ebbelaar
     "UCXZCJLdBC09xxGZ6gcdrc6A",  # OpenAI
     "UCrDwWp7EBBv4NwvScIpBDOA",  # Anthropic
+    "UCNJ1Ymd5yFuUPtn21xtRbbw",  # AI Explained
+    "UCbfYPyITQ-7l4upoX8nvctg",  # Two Minute Papers
+    "UCXUPKJO5MZQN11PqgIvyuvQ",  # Andrej Karpathy
 ]
+

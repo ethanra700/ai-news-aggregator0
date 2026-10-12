@@ -10,6 +10,10 @@ class Base(DeclarativeBase):
     pass
 
 
+# Stored in youtube_videos.transcript when fetching it failed, so we don't keep retrying that video.
+TRANSCRIPT_UNAVAILABLE = "[Transcript not available]"
+
+
 class YouTubeVideo(Base):
     __tablename__ = "youtube_videos"
 

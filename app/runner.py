@@ -21,11 +21,14 @@ class ScrapeResults(BaseModel):
 
 
 def run_scrapers(hours: int = 24) -> ScrapeResults:
-    """Scrape all sources for content published in the last `hours`."""
+    """Scrape all sources for content published in the last `hours`.
+
+    YouTube videos are saved without transcripts; app/services/process_youtube.py fills them in (stage 2).
+    """
     youtube_scraper = YouTubeScraper()
     videos = []
     for channel_id in YOUTUBE_CHANNELS:
-        videos.extend(youtube_scraper.scrape_channel(channel_id, hours))
+        videos.extend(youtube_scraper.get_latest_videos(channel_id, hours))
 
     return ScrapeResults(
         youtube=videos,

@@ -50,12 +50,17 @@ class ArticleRepository:
         """Insert rows, skipping any whose primary key is already saved. Returns how many were new."""
         if not rows:
             return 0
-        primary_key = [column.name for column in table.__table__.primary_key]
-        statement = insert(table).values(rows).on_conflict_do_nothing(index_elements=primary_key)
+        primary_key = list(table.__table__.primary_key)
+        statement = (
+            insert(table)
+            .values(rows)
+            .on_conflict_do_nothing(index_elements=primary_key)
+            .returning(*primary_key)  # only rows actually inserted come back, so we can count them
+        )
         with SessionLocal() as session:
-            result = session.execute(statement)
+            inserted = session.execute(statement).all()
             session.commit()
-            return result.rowcount
+            return len(inserted)
 
     # --- Read ---
 
@@ -67,7 +72,7 @@ class ArticleRepository:
             return list(session.scalars(statement))
 
     def get_youtube_videos_without_transcript(self) -> list[YouTubeVideo]:
-        """Videos whose transcript couldn't be fetched yet (e.g. YouTube blocked the request)."""
+        """Videos whose transcript hasn't been attempted yet (failed attempts are marked TRANSCRIPT_UNAVAILABLE)."""
         statement = select(YouTubeVideo).where(YouTubeVideo.transcript.is_(None))
         with SessionLocal() as session:
             return list(session.scalars(statement))
