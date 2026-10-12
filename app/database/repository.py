@@ -95,6 +95,13 @@ class ArticleRepository:
         with SessionLocal() as session:
             return list(session.scalars(statement))
 
+    def get_recent_digests(self, hours: int = 24) -> list[Digest]:
+        """Digests created in the last `hours`, newest first."""
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        statement = select(Digest).where(Digest.created_at >= cutoff).order_by(Digest.created_at.desc())
+        with SessionLocal() as session:
+            return list(session.scalars(statement))
+
     def get_without_digest(self, table: SourceTable, article_type: str) -> list:
         """Rows from `table` that don't have an entry in `digests` yet."""
         article_id = table.__table__.primary_key.columns[0]  # video_id or guid

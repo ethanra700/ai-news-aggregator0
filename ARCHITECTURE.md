@@ -129,7 +129,7 @@ Both scrapers should return the same shape of data (title, url, published_at, co
 - `build_digest(summaries, profile)`: uses OpenAI structured outputs to return a ranked, filtered list of `{title, snippet, url, source}` plus a short intro.
 - The model name comes from configuration, so it can be changed without code edits.
 
-**`email.py`**: sends the digest via Resend's free tier (3,000 emails/month). The default sender is `onboarding@resend.dev`, which can deliver to your own address without setting up a domain.
+**`email.py`**: sends the digest through Gmail SMTP (free, built into Python via `smtplib`). Needs a Google App Password, not your normal password.
 
 #### `app/agent/`: prompts
 
@@ -163,8 +163,8 @@ All settings come from environment variables: a local `.env` file (never committ
 | `DATABASE_URL` | `postgresql+psycopg://ai_news:ai_news_password@localhost:5433/ai_news` | database |
 | `OPENAI_API_KEY` | `sk-...` | LLM |
 | `OPENAI_MODEL` | `gpt-5-mini` | LLM (optional) |
-| `RESEND_API_KEY` | `re_...` | email |
-| `EMAIL_FROM` | `onboarding@resend.dev` | email |
+| `GMAIL_ADDRESS` | `you@gmail.com` | email (sender) |
+| `GMAIL_APP_PASSWORD` | 16-character Google App Password | email |
 | `EMAIL_TO` | your inbox | email |
 
 For Neon, use its connection string with `?sslmode=require` on the end.
@@ -226,7 +226,7 @@ Each step is built and tested before moving to the next. Tick a box when it's do
   *Test:* `uv run python main.py run` from a fresh database ends with the email in your inbox; running it again adds no duplicates.
 
 - [ ] **9. Production: Neon + GitHub Actions** (`.github/workflows/daily-digest.yml`)
-  Create a free Neon database; add `DATABASE_URL`, `OPENAI_API_KEY`, `RESEND_API_KEY` and `EMAIL_TO` as repo secrets; daily cron at 06:00 UTC plus a manual "Run workflow" button.
+  Create a free Neon database; add `DATABASE_URL`, `OPENAI_API_KEY`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD` and `EMAIL_TO` as repo secrets; daily cron at 06:00 UTC plus a manual "Run workflow" button.
   *Test:* start the workflow by hand from the Actions tab; the job goes green, the email arrives, and the rows appear in the Neon console. Check whether YouTube blocks transcripts from GitHub's servers; if it does, add a proxy.
 
 - [ ] **10. Tests + readme** (`tests/`, `readme.md`)
