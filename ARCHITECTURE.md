@@ -92,7 +92,7 @@ ai-news-aggregator0/
 | `youtube_videos` ✅ | `video_id` (PK), `title`, `url`, `channel_id`, `published_at`, `description`, `transcript`, `created_at` | One row per video |
 | `openai_articles` ✅ | `guid` (PK), `title`, `url`, `description`, `published_at`, `category`, `created_at` | One row per OpenAI post |
 | `anthropic_articles` ✅ | `guid` (PK), `title`, `url`, `description`, `published_at`, `category`, `markdown`, `created_at` | One row per Anthropic post. `markdown` holds the full text (filled in later) |
-| `digests` 🔲 | `id`, `article_type`, `article_id`, `url`, `title`, `summary`, `created_at` | One row per summarized item (added in a later step) |
+| `digests` ✅ | `id` (`<article_type>:<article_id>`), `article_type`, `article_id`, `url`, `title`, `summary`, `created_at` | One AI-written summary per article/video (written by `app/services/process_digests.py`) |
 
 One table per source, matching the tutorial. Each primary key (`video_id` / `guid`) makes re-saving the same item a no-op.
 

@@ -10,11 +10,11 @@ Usage:
 
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import exists, select, update
 from sqlalchemy.dialects.postgresql import insert
 
 from app.database.connection import SessionLocal
-from app.database.models import AnthropicArticle, Base, OpenAIArticle, YouTubeVideo
+from app.database.models import AnthropicArticle, Base, Digest, OpenAIArticle, YouTubeVideo
 
 # The scrapers' Pydantic models have the same names as the database models, so import them by module.
 from app.scrapers import anthropic_news, openai_news, youtube
@@ -45,6 +45,18 @@ class ArticleRepository:
 
     def save_anthropic_articles(self, articles: list[anthropic_news.AnthropicArticle]) -> int:
         return self._insert(AnthropicArticle, [article.model_dump() for article in articles])
+
+    def save_digest(self, article_type: str, article_id: str, url: str, title: str, summary: str) -> int:
+        """Save one digest entry (skipped if this article already has one). Returns 1 if saved, 0 if skipped."""
+        row = {
+            "id": f"{article_type}:{article_id}",
+            "article_type": article_type,
+            "article_id": article_id,
+            "url": url,
+            "title": title,
+            "summary": summary,
+        }
+        return self._insert(Digest, [row])
 
     def _insert(self, table: type[Base], rows: list[dict]) -> int:
         """Insert rows, skipping any whose primary key is already saved. Returns how many were new."""
@@ -80,6 +92,14 @@ class ArticleRepository:
     def get_anthropic_articles_without_markdown(self) -> list[AnthropicArticle]:
         """Articles whose full text hasn't been downloaded yet."""
         statement = select(AnthropicArticle).where(AnthropicArticle.markdown.is_(None))
+        with SessionLocal() as session:
+            return list(session.scalars(statement))
+
+    def get_without_digest(self, table: SourceTable, article_type: str) -> list:
+        """Rows from `table` that don't have an entry in `digests` yet."""
+        article_id = table.__table__.primary_key.columns[0]  # video_id or guid
+        has_digest = exists().where(Digest.article_type == article_type, Digest.article_id == article_id)
+        statement = select(table).where(~has_digest).order_by(table.published_at.desc())
         with SessionLocal() as session:
             return list(session.scalars(statement))
 

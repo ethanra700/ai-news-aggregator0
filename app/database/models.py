@@ -50,3 +50,17 @@ class AnthropicArticle(Base):
     category: Mapped[str | None] = mapped_column(String)
     markdown: Mapped[str | None] = mapped_column(Text)  # full article text, filled in later
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Digest(Base):
+    """One AI-written summary of one article/video. `article_type` + `article_id` point back to the source row."""
+
+    __tablename__ = "digests"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)  # "<article_type>:<article_id>", e.g. "youtube:PUBc2G0Tj5E"
+    article_type: Mapped[str] = mapped_column(String)  # "youtube", "openai" or "anthropic"
+    article_id: Mapped[str] = mapped_column(String)  # video_id or guid in that source's table
+    url: Mapped[str] = mapped_column(String)  # link to the original article/video
+    title: Mapped[str] = mapped_column(String)  # headline written for the digest
+    summary: Mapped[str] = mapped_column(Text)  # 2-3 sentence summary
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
